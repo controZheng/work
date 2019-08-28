@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+<script>
+    const arr = [
+        {name: '小孙', age: 18, score: 60, weight: 60},
+        {name: '小王', age: 19, score: 70, weight: 55},
+        {name: '小李', age: 18, score: 60, weight: 70},
+        {name: '小刘', age: 20, score: 70, weight: 65},
+        {name: '小赵', age: 18, score: 60, weight: 60},
+        {name: '小钱', age: 19, score: 70, weight: 55},
+        {name: '小周', age: 20, score: 60, weight: 50},
+    ];
+
+    const group_signal = (data, key) => {
+        return data.reduce(function(prev, cur) {
+            (prev[cur[key]] = prev[cur[key]] || []).push(cur);
+            return prev;
+        }, {});
+    };
+
+    console.log(group_signal(arr, 'age'));
+    class GroupMultiple {
+        constructor(data, name, operating = null) {
+            this.data = data;
+            this.name = name;
+            this.operating = operating;
+        }
+
+        getObject(obj, keys = this.name) {
+            let aa = {};
+            for (var i = 0, length = keys.length; i < length; i++) {
+                aa[keys[i]] = obj[keys[i]]
+            }
+            return aa
+        }
+
+        //返回一个数组中包含某个对象的元素
+        hasObjectData(data, obj) {
+            return data.filter(function (item) {
+                return Object.keys(obj).reduce(function (pr, cr) {
+                    if (pr) {
+                        return obj[cr] === item[cr]
+                    } else {
+                        return false
+                    }
+                }, true)
+            });
+
+        }
+
+        //判断数组中是否有了某个对象
+        isHasObject(prev, keys) {
+            //数组长度为0的时候直接返回
+            if (prev.length === 0) return false;
+            var _this = this;
+            //判断数组中的每一项是否与keys相等， 这里用到数组的find方法，当数组的每一项与keys都不想等的时候（也就是数组中没有这个对象）返回undefined，
+            //isObjectValueEqual 是判断两个对象是否相等的方法
+            return prev.find(function (item) {
+                return _this.isObjectValueEqual(item, keys)
+            })
+        }
+
+        //判断两个对象是否相等
+        isObjectValueEqual(obj1, obj2) {
+            // 只有两个对象的key和value完全相等时这两个对象才相等
+            var _this = this;
+            var keys1 = Object.keys(obj1);
+            var keys2 = Object.keys(obj2);
+            if (keys1.length !== keys2.length) {
+                return false;
+            }
+            for (var i = 0; i < keys1.length; i++) {
+                var key = keys1[i];
+                if (obj1[key] !== obj2[key]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        getKeys(data, names) {
+            let _this = this;
+            return data.reduce(function (prev, cur) {
+                //首先拿到name对应的值， 将key组成 {key: value}形式
+                var key = _this.getObject(cur, names);
+                //判断数组里是否已经含有了key，有的话就跳过，否则把key放入到数组里
+                //把判断方法封装成一个函数 isHasObject
+                if (!_this.isHasObject(prev, key)) {
+                    prev.push(key);
+                }
+                return prev
+            }, [])
+        }
+
+        sum(key, data) {
+            //key是要求和的字段， data是要求和的数组
+            return data.reduce(function (prev, cur) {
+                return prev + cur[key]
+            }, 0)
+        }
+
+        //返回结果
+        init() {
+            let _this = this;
+            //拿到keys
+            let keys = _this.getKeys(_this.data, this.name);
+            return keys.map(function (item) {
+                //拿到keys对应的值
+                let vals = _this.hasObjectData(_this.data, item);
+                if (_this.operating) {
+                    Object.keys(_this.operating).forEach(opitem => {
+                        let ret = _this[_this.operating[opitem]](opitem, vals);
+                        vals.forEach(val => {
+                            val[opitem] = ret
+                        })
+                    })
+                }
+                return {
+                    key: item,
+                    value: vals
+                };
+            });
+        }
+
+    }
+
+    var sum_group = new GroupMultiple(arr, ['age', 'score'], {weight: 'sum'});
+    console.log(sum_group.init())
+</script>
+</html>
